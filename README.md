@@ -1,8 +1,18 @@
 # Teachable Machine
 
-A Python package to simplify the deployment of exported Teachable Machine models into different environments like PC, Raspberry Pi and so on.
+A Python package to simplify the deployment process of exported [Teachable Machine](https://teachablemachine.withgoogle.com/) models into different environments like Windows, Linux and MAC.
 
-Link on PyPI: <https://pypi.org/project/teachable-machine/>
+Links:
+
+[PyPI](https://pypi.org/project/teachable-machine/)
+
+[Source Code](https://github.com/MeqdadDev/teachable-machine)
+
+## Supported Tools in Teachable Machine
+
+Image Classification using exported keras model from Teachable Machine platfrom.
+
+Next tool in the package: **Pose Classification**
 
 ## Requirements
 
@@ -23,11 +33,16 @@ pip install teachable-machine
 ```py
 from teachable_machine import TeachableMachine
 
-my_model = TeachableMachine(model_path='keras_model.h5', deployment_env='pc')
+my_model = TeachableMachine(model_path='keras_model.h5', model_type='h5')
 
 img_path = 'images/my_image.jpg'
 
-highest_prediction, predictions = my_model.classify_on_pc(img_path)
+result = my_model.classify_image(img_path)
+
+print('highest_class_id:', result['highest_class_id'])
+print('all_predictions:', result['all_predictions'])
 ```
 
-More features are coming...
+_highest_class_id_ is selected based on labels.txt file.
+
+More features are coming soon...
