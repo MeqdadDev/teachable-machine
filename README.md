@@ -5,15 +5,13 @@
 
 A Python package to simplify the deployment process of exported [Teachable Machine](https://teachablemachine.withgoogle.com/) models into Python projects.
 
-## Supported Tools in Teachable Machine
+## Supported Classifiers
 
 **Image Classification**: use exported keras model from Teachable Machine platfrom.
 
-Next tool in the package: **Pose Classification**
-
 ## Requirements
 
-Python >= 3.7
+``` Python >= 3.7 ```
 
 ## How to install package
 
@@ -23,7 +21,7 @@ pip install teachable-machine
 
 ## Dependencies
 
-```
+```bash
 numpy
 Pillow
 tensorflow
