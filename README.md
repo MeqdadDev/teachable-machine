@@ -1,22 +1,19 @@
 # Teachable Machine
 
-A Python package to simplify the deployment process of exported [Teachable Machine](https://teachablemachine.withgoogle.com/) models into different environments like Windows, Linux and MAC.
+[![Downloads](https://static.pepy.tech/badge/teachable-machine)](https://pepy.tech/project/teachable-machine)
+[![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://choosealicense.com/licenses/mit/)
 
-Links:
-
-[PyPI](https://pypi.org/project/teachable-machine/)
-
-[Source Code](https://github.com/MeqdadDev/teachable-machine)
+A Python package to simplify the deployment process of exported [Teachable Machine](https://teachablemachine.withgoogle.com/) models into Python projects.
 
 ## Supported Tools in Teachable Machine
 
-Image Classification using exported keras model from Teachable Machine platfrom.
+**Image Classification**: use exported keras model from Teachable Machine platfrom.
 
 Next tool in the package: **Pose Classification**
 
 ## Requirements
 
-Python >= 3.8
+Python >= 3.7
 
 ## How to install package
 
@@ -26,23 +23,49 @@ pip install teachable-machine
 
 ## Dependencies
 
-```numpy, Pillow, tensorflow```
+```
+numpy
+Pillow
+tensorflow
+```
 
 ## How to use teachable machine package
 
-```py
+An example for teachable machine package with OpenCV:
+
+```python
 from teachable_machine import TeachableMachine
+import cv2 as cv
 
-my_model = TeachableMachine(model_path='keras_model.h5', model_type='h5')
+cap = cv.VideoCapture(0)
+model = TeachableMachine(model_path="keras_model.h5",
+                         labels_file_path="labels.txt")
 
-img_path = 'images/my_image.jpg'
+image_path = "screenshot.jpg"
 
-result = my_model.classify_image(img_path)
+while True:
+    _, img = cap.read()
+    cv.imwrite(image_path, img)
 
-print('highest_class_id:', result['highest_class_id'])
-print('all_predictions:', result['all_predictions'])
+    result = model.classify_image(image_path)
+
+    print("class_index", result["class_index"])
+
+    print("class_name:::", result["class_name"])
+
+    print("class_confidence:", result["class_confidence"])
+
+    print("predictions:", result["predictions"])
+
+    cv.imshow("Video Stream", img)
+
+    cv.waitKey(1)
 ```
 
-_highest_class_id_ is selected based on labels.txt file.
+`class_index` and `class_name`  are assigned based on the content of labels.txt file.
 
-More features are coming soon...
+Links:
+
+[PyPI](https://pypi.org/project/teachable-machine/)
+
+[Source Code](https://github.com/MeqdadDev/teachable-machine)
