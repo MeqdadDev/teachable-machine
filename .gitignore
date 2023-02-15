@@ -176,4 +176,5 @@ src/converted_keras.zip
 src/keras_model.h5
 src/labels.txt
 src/run_tm.py
+src/screenshot.jpg
 # End
