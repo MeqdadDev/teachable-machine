@@ -27,7 +27,7 @@ Pillow
 tensorflow
 ```
 
-## How to use teachable machine package
+## Example
 
 An example for teachable machine package with OpenCV:
 
