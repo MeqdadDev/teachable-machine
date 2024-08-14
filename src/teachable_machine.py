@@ -1,97 +1,186 @@
 from tensorflow.keras.models import load_model
-from PIL import Image, ImageOps
+from PIL import Image, ImageOps, ImageDraw, ImageFont
 import numpy as np
 
 
 class TeachableMachine(object):
-    '''
-    Create your TeachableMachine object to run your trained AI models.
-    '''
+    """
+    Create a TeachableMachine object to run pre-trained AI models.
+    """
 
-    def __init__(self, model_path='keras_model.h5', labels_file_path='labels.txt', model_type='h5') -> None:
+    SUPPORTED_TYPES = {"keras", "h5"}
+    IMAGE_SIZE = (224, 224)
+
+    def __init__(
+        self,
+        model_path="keras_model.h5",
+        labels_file_path="labels.txt",
+        model_type="h5",
+    ) -> None:
         self._model_type = model_type.lower()
-        self._labels_file_path = labels_file_path
-        self._supported_types = ('keras', 'Keras', 'h5', 'h5py')
-
+        if self._model_type not in self.SUPPORTED_TYPES:
+            raise ValueError(
+                f"Unsupported model type: {self._model_type}. Use 'keras' or 'h5'."
+            )
         np.set_printoptions(suppress=True)
+
+        self._load_model(model_path)
+        self._load_labels(labels_file_path)
+        print("Teachable Machine Object is created successfully.")
+
+    def _load_model(self, model_path: str):
         try:
             self._model = load_model(model_path, compile=False)
         except IOError as e:
-            print('LoadingModelError: Error while loading Teachable Machine model')
-            raise IOError from e
-        except:
             print("LoadingModelError: Error while loading Teachable Machine model")
-            raise FileNotFoundError
+            raise IOError("Error loading model") from e
+        except Exception as e:
+            print("LoadingModelError: Error while loading Teachable Machine model")
+            raise FileNotFoundError("Model file not found") from e
+
+    def _load_labels(self, labels_file_path):
         try:
-            self._labels_file = open(self._labels_file_path, "r").readlines()
+            with open(labels_file_path, "r") as file:
+                self._labels = file.readlines()
         except IOError as e:
-            print('LoadingLabelsError: Error while loading labels.txt file')
-            raise IOError from e
-        except:
             print("LoadingLabelsError: Error while loading labels.txt file")
-            raise FileNotFoundError
+            raise IOError("Error loading labels") from e
+        except Exception as e:
+            print("LoadingLabelsError: Error while loading labels.txt file")
+            raise FileNotFoundError("Labels file not found") from e
 
-        self._object_creation_status = self._model_type in self._supported_types
-        if self._object_creation_status:
-            print('Teachable Machine Object is created successfully.')
-        else:
-            raise 'NotSupportedType: Your model type is not supported, try to use types such as "keras" or "h5".'
+    def _open_image(self, image_path):
+        """
+        Open an image file and convert it to RGB mode.
 
-    def classify_image(self, frame_path: str):
-        '''To deploy your Teachable Machine Model on a computer/PC
-            with .h5 extension using TensorFlow.
+        Parameters:
+        image_path (str): Path to the image file.
 
-            Parameters:
-            * (str) frame_path: Provide path of the image to be classified.
-
-            Returns:
-            * class_name: Name of the highest predicted class according to labels.txt file
-            * class_index: Index or ID of the highest predicted class according to labels.txt file
-            * predictions: All prediction values for all classes.
-        '''
+        Returns:
+        PIL.Image.Image: Opened image in RGB mode.
+        """
         try:
-            frame = Image.open(frame_path)
-            if frame.mode != "RGB":
-                frame = frame.convert("RGB")
+            return Image.open(image_path).convert("RGB")
         except FileNotFoundError as e:
             print("ImageNotFound: Error in image file.")
-            raise FileNotFoundError from e
-        except TypeError as e:
-            print(
-                "ImageTypeError: Error while converting image to RGB format, image type is not supported")
-        try:
-            if self._object_creation_status:
-                return self._get_image_classification(frame)
-        except BaseException as e:
-            print('Error in classification process, retrain your model.')
-            raise e
+            raise FileNotFoundError("Image file not found") from e
+        except Exception as e:
+            print("ImageTypeError: Error while opening or converting image")
+            raise TypeError("Unsupported image type") from e
+
+    def classify_image(self, image_path: str):
+        """
+        Classify an image using the pre-trained model.
+
+        Parameters:
+        image_path (str): Path of the image to be classified.
+
+        Returns:
+        dict: Classification results including class name, index, confidence and predictions.
+        """
+        image = self._open_image(image_path)
+        return self._get_image_classification(image)
 
     def _get_image_classification(self, image):
-        data = self._form_image(image)
+        data = self._preprocess_image(image)
         prediction = self._model.predict(data)
         class_index = np.argmax(prediction)
-        class_name = self._labels_file[class_index]
+        class_name = self._labels[class_index].strip()
         class_confidence = prediction[0][class_index]
 
         return {
-            "class_name": class_name[2:],
-            "highest_class_name": class_name[2:],
+            "class_name": class_name,
+            "highest_class_name": class_name,
             "highest_class_id": class_index,
             "class_index": class_index,
             "class_id": class_index,
-            "predictions": prediction,
-            "all_predictions": prediction,
+            "predictions": prediction[0],
+            "all_predictions": prediction[0],
             "class_confidence": class_confidence,
             "highest_class_confidence": class_confidence,
         }
 
-    def _form_image(self, image):
-        image_data = np.ndarray(shape=(1, 224, 224, 3), dtype=np.float32)
-        crop_size = (224, 224)
-        image = ImageOps.fit(image, crop_size, Image.Resampling.LANCZOS)
+    def _preprocess_image(self, image):
+        image = ImageOps.fit(image, self.IMAGE_SIZE, Image.Resampling.LANCZOS)
         image_array = np.asarray(image)
+        normalized_image_array = (image_array.astype(np.float32) / 127.5) - 1
+        return np.expand_dims(normalized_image_array, axis=0)
 
-        normalized_image_array = (image_array.astype(np.float32) / 127.0) - 1
+    def classify_and_show(self, image_path: str, convert_to_bgr=True):
+        """
+        Classify an image and show the prediction results on the image.
 
-        image_data[0] = normalized_image_array
-        return image_data
+        Parameters:
+        image_path (str): Path of the input image to be classified.
+        convert_to_bgr (bool, optional): Whether to convert the image to BGR format for OpenCV.
+            If False, the image will be returned in RGB format. Default is True.
+
+        Returns:
+        tuple: (classification_result, image_with_prediction)
+            classification_result (dict): Classification results including class name, index, confidence and predictions.
+            image_with_prediction (np.ndarray or PIL.Image.Image): The image with prediction results drawn on it.
+                Returns a NumPy array in BGR format if convert_to_bgr is True.
+                Otherwise, returns a PIL.Image.Image in RGB format.
+        """
+        classification_result = self.classify_image(image_path)
+        image_with_prediction = self.show_prediction_on_image(
+            image_path, classification_result, convert_to_bgr=convert_to_bgr
+        )
+        return classification_result, image_with_prediction
+
+    def show_prediction_on_image(
+        self, image_path: str, classification_result=None, convert_to_bgr=True
+    ):
+        """
+        Show the prediction results on the image and return the modified image.
+
+        Parameters:
+        image_path (str): Path of the input image to be classified.
+        classification_result (dict, optional): Pre-computed classification result.
+            If not provided, the method will classify the image.
+        convert_to_bgr (bool, optional): Whether to convert the image to BGR format for OpenCV.
+            If False, the image will be returned in RGB format. Default is True.
+
+        Returns:
+        np.ndarray or PIL.Image.Image: The image with prediction results drawn on it.
+            Returns a NumPy array in BGR format if convert_to_bgr is True.
+            Otherwise, returns a PIL.Image.Image in RGB format.
+        """
+        image = self._open_image(image_path)
+
+        if classification_result is None:
+            classification_result = self._get_image_classification(image)
+
+        class_name = classification_result["class_name"]
+        confidence = classification_result["class_confidence"]
+        confidence_percent = confidence * 100
+        text = f"{class_name}: {confidence_percent:.2f}%"
+
+        draw = ImageDraw.Draw(image)
+
+        font_size = int(image.height * 0.04)  # 4% of the image height
+        font = ImageFont.truetype("DejaVuSans-Bold.ttf", font_size)
+
+        text_width, text_height = draw.textsize(text, font=font)
+        position = (10, image.height - text_height - 10)
+
+        draw.rectangle(
+            [
+                position[0],
+                position[1],
+                position[0] + text_width,
+                position[1] + text_height,
+            ],
+            fill=(0, 0, 0, 128),
+        )
+
+        draw.text(position, text, font=font, fill=(255, 255, 255))
+
+        if convert_to_bgr:
+            image_2_numpy_arr = np.array(image)
+
+            # Convert RGB to BGR
+            image_2_numpy_arr = image_2_numpy_arr[:, :, ::-1]
+            return image_2_numpy_arr
+
+        return image
