@@ -1,13 +1,13 @@
 import pytest
-from teachable_machine import TeachableMachine
-from PIL import Image, ImageDraw
+from src.teachable_machine import TeachableMachine
+from PIL import Image
 import numpy as np
 
 
 @pytest.fixture
 def teachable_machine(mocker):
     # Create a TeachableMachine instance
-    mocker.patch("teachable_machine.load_model", return_value="mock_model")
+    mocker.patch("src.teachable_machine.load_model", return_value="mock_model")
 
     # Mock the open function to simulate reading from the labels.txt file with the specified content
     mocker.patch("builtins.open", mocker.mock_open(read_data="0 Class A\n1 Class B\n"))
@@ -23,7 +23,7 @@ def test_teachable_machine_initialization(mocker):
     Test the initialization of the TeachableMachine class and loading of the model and labels.
     """
     # Mock the load_model and _load_labels methods to avoid actual file operations
-    mocker.patch("teachable_machine.load_model", return_value="mock_model")
+    mocker.patch("src.teachable_machine.load_model", return_value="mock_model")
 
     # Mock the open function to simulate reading from the labels.txt file with the specified content
     mocker.patch("builtins.open", mocker.mock_open(read_data="0 Class A\n1 Class B\n"))
@@ -51,7 +51,7 @@ def test_open_image(mocker):
     Test the _open_image method of the TeachableMachine class.
     """
     # Create a TeachableMachine instance
-    mocker.patch("teachable_machine.load_model", return_value="mock_model")
+    mocker.patch("src.teachable_machine.load_model", return_value="mock_model")
 
     # Mock the open function to simulate reading from the labels.txt file with the specified content
     mocker.patch("builtins.open", mocker.mock_open(read_data="0 Class A\n1 Class B\n"))

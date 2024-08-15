@@ -1,4 +1,4 @@
-from teachable_machine import TeachableMachine
+# from teachable_machine import TeachableMachine
 
 
 __author__ = "MeqdadDev"
