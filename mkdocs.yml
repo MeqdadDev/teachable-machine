@@ -8,7 +8,8 @@ plugins:
 
 nav:
   - Teachable Machine - Home: index.md
-  - Requirements and Dependencies: requirements.md
+  - How-To Guide: how-to-guide.md
+  - Requirements: requirements.md
   - Code Examples: codeExamples.md
   - Explanation: explanation.md
   - Contributing: contribution.md

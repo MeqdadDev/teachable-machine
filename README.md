@@ -1,13 +1,17 @@
 # Teachable Machine
+_By: [Meqdad Darwish](https://github.com/MeqdadDev)_
 
 [![Downloads](https://static.pepy.tech/badge/teachable-machine)](https://pepy.tech/project/teachable-machine)
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://choosealicense.com/licenses/mit/)
 
-A Python package to simplify the deployment process of exported [Teachable Machine](https://teachablemachine.withgoogle.com/) models into Python projects.
+A Python package designed to simplify the integration of exported models from Google's [Teachable Machine](https://teachablemachine.withgoogle.com/) platform into various environments.
+This tool was specifically crafted to work seamlessly with Teachable Machine, making it easier to implement and use your trained models.
+
+Source Code is published on [GitHub](https://github.com/MeqdadDev/teachable-machine)
 
 ## Supported Classifiers
 
-**Image Classification**: use exported keras model from Teachable Machine platfrom.
+**Image Classification**: use exported keras model from Teachable Machine platform.
 
 ## Requirements
 
@@ -17,14 +21,6 @@ A Python package to simplify the deployment process of exported [Teachable Machi
 
 ```bash
 pip install teachable-machine
-```
-
-## Dependencies
-
-```bash
-numpy
-Pillow
-tensorflow
 ```
 
 ## Example
@@ -64,6 +60,6 @@ while True:
 
 Links:
 
-[PyPI](https://pypi.org/project/teachable-machine/)
+- [PyPI](https://pypi.org/project/teachable-machine/)
 
-[Source Code](https://github.com/MeqdadDev/teachable-machine)
+- [Source Code](https://github.com/MeqdadDev/teachable-machine)
