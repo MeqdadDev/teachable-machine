@@ -140,7 +140,7 @@ venv.bak/
 .ropeproject
 
 # mkdocs documentation
-/site
+#/site
 
 # mypy
 .mypy_cache/
@@ -178,3 +178,13 @@ src/labels.txt
 src/run_tm.py
 src/screenshot.jpg
 # End
+/.idea/.gitignore
+/src/model/keras_model.h5
+/src/model/labels.txt
+/.idea/misc.xml
+/.idea/modules.xml
+/.idea/inspectionProfiles/profiles_settings.xml
+/src/run_demo.py
+/screenshot.jpg
+/.idea/teachable-machine.iml
+/.idea/vcs.xml
