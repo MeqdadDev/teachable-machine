@@ -1,5 +1,8 @@
 ## Code Examples
 
+Before running any of the code examples, ensure that the package is installed successfully.
+You can find the installation instructions [here](https://meqdaddev.github.io/teachable-machine/how-to-guide/#how-to-install-the-package).
+
 ### Example 1
 
 An example for teachable machine package with OpenCV:
@@ -38,4 +41,4 @@ cap.release()
 cv.destroyAllWindows()
 ```
 
-`result` values are assigned based on the content of `labels.txt` file.
+Values of `result` are assigned based on the content of `labels.txt` file.
