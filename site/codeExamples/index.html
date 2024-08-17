@@ -53,6 +53,8 @@
     <ul class="current">
     <li class="toctree-l2"><a class="reference internal" href="#example-1">Example 1</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#example-2">Example 2</a>
+    </li>
     </ul>
                 </li>
               </ul>
@@ -88,8 +90,18 @@
             <div class="section" itemprop="articleBody">
               
                 <h2 id="code-examples">Code Examples</h2>
+<p>Before running any of the code examples, ensure that the package is installed successfully.
+You can find the installation instructions <a href="https://meqdaddev.github.io/teachable-machine/how-to-guide/#how-to-install-the-package">here</a>.</p>
+<p>You also need to have an exported model (with <code>.h5</code> file extension) with an associated labels text file for the package to use in annotations.</p>
+<p>Expected structure before running the code examples:</p>
+<pre><code>test-directory/
+├── keras_model.h5
+├── labels.txt
+└── app.py (your code example file)
+</code></pre>
 <h3 id="example-1">Example 1</h3>
-<p>An example for teachable machine package with OpenCV:</p>
+<p>In this example for the teachable machine package with OpenCV, we will classify frames coming from the camera view and display 
+the classification results on the camera view itself. We use <code>classify_and_show</code> to achieve this. See the code example below:</p>
 <pre><code class="language-python">from teachable_machine import TeachableMachine
 import cv2 as cv
 
@@ -122,7 +134,48 @@ while True:
 cap.release()
 cv.destroyAllWindows()
 </code></pre>
-<p><code>result</code> values are assigned based on the content of <code>labels.txt</code> file.</p>
+<p>The values of <code>result</code> are assigned based on the content of the <code>labels.txt</code> file.</p>
+<h3 id="example-2">Example 2</h3>
+<p>In this example for the teachable machine package with OpenCV, we will classify frames coming from the camera view and display 
+the classification results on the camera view itself, but with separated methods for each task.</p>
+<p>We use <code>classify_image</code> to classify the captured image but without showing the results on the camera view. Also, we use <code>show_prediction_on_image</code> to
+get a frame with previous classification results.</p>
+<p>Note that the <code>classify_image</code> method returns only the prediction results (a Python <code>dict</code>), not an image (numpy array or PIL.Image).</p>
+<p>See the code example below:</p>
+<pre><code class="language-python">from teachable_machine import TeachableMachine
+import cv2 as cv
+
+cap = cv.VideoCapture(0)
+model = TeachableMachine(model_path=&quot;keras_model.h5&quot;,
+                         labels_file_path=&quot;labels.txt&quot;)
+
+image_path = &quot;screenshot.jpg&quot;
+
+while True:
+    _, img = cap.read()
+    cv.imwrite(image_path, img)
+
+    result = model.classify_image(image_path)
+
+    resultImage = model.show_prediction_on_image(image_path, result)
+
+    print(&quot;class_index&quot;, result[&quot;class_index&quot;])
+
+    print(&quot;class_name:::&quot;, result[&quot;class_name&quot;])
+
+    print(&quot;class_confidence:&quot;, result[&quot;class_confidence&quot;])
+
+    print(&quot;predictions:&quot;, result[&quot;predictions&quot;])
+
+    cv.imshow(&quot;Video Stream&quot;, resultImage)
+
+    k = cv.waitKey(1)
+    if k == 27:  # Press ESC to close the camera view
+        break
+
+cap.release()
+cv.destroyAllWindows()
+</code></pre>
               
             </div>
           </div><footer>
