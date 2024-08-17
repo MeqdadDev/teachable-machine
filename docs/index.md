@@ -1,6 +1,12 @@
 # Welcome to Teachable Machine Package
 _By: [Meqdad Darwish](https://github.com/MeqdadDev)_
 
+<p align="center">
+<picture>
+  <img alt="Teachable Machine Package Logo" src="logo.png" width="80%" height="80%" >
+</picture>
+</p>
+
 [![Downloads](https://static.pepy.tech/badge/teachable-machine)](https://pepy.tech/project/teachable-machine)
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://choosealicense.com/licenses/mit/)
 [![PyPI](https://img.shields.io/pypi/v/teachable-machine)](https://pypi.org/project/teachable-machine/)
