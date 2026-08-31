@@ -1,5 +1,7 @@
+import json
+
 import pytest
-from src.teachable_machine import TeachableMachine
+from src.teachable_machine import TeachableMachine, _CompatDepthwiseConv2D
 from PIL import Image
 import numpy as np
 
@@ -143,3 +145,71 @@ def test_preprocess_image_content(teachable_machine):
 
     # Check if the white square is still in the top-left corner (approximately)
     assert np.mean(processed[0, :50, :50]) > np.mean(processed[0, 50:, 50:])
+
+
+def test_compat_depthwise_conv2d_ignores_stray_groups_kwarg():
+    """
+    `_CompatDepthwiseConv2D` must silently drop an unrecognized 'groups'
+    kwarg, which Teachable Machine's exported .h5 configs always include.
+    Plain `tf.keras.layers.DepthwiseConv2D` raises on this under Keras 3
+    (TensorFlow >= 2.16); this is the direct unit-level check of the fix.
+    """
+    layer = _CompatDepthwiseConv2D(kernel_size=3, groups=1)
+    assert layer.kernel_size == (3, 3)
+
+
+def test_load_model_with_legacy_groups_config(tmp_path):
+    """
+    Regression test for https://github.com/MeqdadDev/teachable-machine/issues/2.
+
+    Teachable Machine's Keras/.h5 export embeds a stray 'groups': 1 key
+    in every saved DepthwiseConv2D layer config. Current Keras (bundled
+    by default since TensorFlow 2.16) validates configs strictly and
+    raises on that unrecognized key. This test builds a tiny model,
+    tampers its saved .h5 config to reproduce that legacy shape, and
+    verifies TeachableMachine still loads and classifies with it.
+    """
+    h5py = pytest.importorskip("h5py")
+    tf = pytest.importorskip("tensorflow")
+
+    model = tf.keras.Sequential(
+        [
+            tf.keras.layers.Input(shape=(224, 224, 3)),
+            tf.keras.layers.DepthwiseConv2D(
+                kernel_size=3, name="expanded_conv_depthwise"
+            ),
+            tf.keras.layers.Flatten(),
+            tf.keras.layers.Dense(2, activation="softmax"),
+        ]
+    )
+
+    model_path = tmp_path / "keras_model.h5"
+    model.save(model_path)
+
+    # Reproduce Teachable Machine's legacy DepthwiseConv2D config by
+    # injecting the unused 'groups' key into the saved model config.
+    with h5py.File(model_path, "r+") as f:
+        model_config = json.loads(f.attrs["model_config"])
+        layers = model_config["config"]["layers"]
+        patched_layers = [
+            layer for layer in layers if layer["class_name"] == "DepthwiseConv2D"
+        ]
+        assert patched_layers, "test setup: no DepthwiseConv2D layer to tamper"
+        for layer in patched_layers:
+            layer["config"]["groups"] = 1
+        f.attrs["model_config"] = json.dumps(model_config)
+
+    labels_path = tmp_path / "labels.txt"
+    labels_path.write_text("0 Class A\n1 Class B\n")
+
+    # Without the compatibility patch, this raises TypeError/ValueError
+    # on Keras 3: "Unrecognized keyword arguments... {'groups': 1}".
+    tm = TeachableMachine(
+        model_path=str(model_path), labels_file_path=str(labels_path)
+    )
+
+    sample_image = Image.new("RGB", (224, 224), color=(128, 128, 128))
+    result = tm._get_image_classification(sample_image)
+
+    assert result["class_name"] in {"0 Class A", "1 Class B"}
+    assert result["predictions"].shape == (2,)

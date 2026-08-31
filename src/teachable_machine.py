@@ -1,6 +1,30 @@
 from tensorflow.keras.models import load_model
+from tensorflow.keras.layers import DepthwiseConv2D
 from PIL import Image, ImageOps, ImageDraw, ImageFont
 import numpy as np
+
+
+class _CompatDepthwiseConv2D(DepthwiseConv2D):
+    """
+    Drop-in replacement for Keras' DepthwiseConv2D that tolerates the
+    stray 'groups' argument found in models exported by Google's
+    Teachable Machine platform.
+
+    Teachable Machine's Keras/.h5 export embeds 'groups': 1 in every
+    saved DepthwiseConv2D layer config. That key was never meaningful
+    for a depthwise convolution, but older Keras ignored it. Keras 3
+    (bundled by default since TensorFlow 2.16) validates layer configs
+    strictly and raises:
+        TypeError/ValueError: Unrecognized keyword arguments passed to
+        DepthwiseConv2D: {'groups': 1}
+    This subclass discards the unused key on construction so exported
+    models keep loading on current TensorFlow/Keras installs, without
+    requiring users to pin an old TensorFlow version.
+    """
+
+    def __init__(self, *args, **kwargs):
+        kwargs.pop("groups", None)
+        super().__init__(*args, **kwargs)
 
 
 class TeachableMachine(object):
@@ -30,7 +54,11 @@ class TeachableMachine(object):
 
     def _load_model(self, model_path: str):
         try:
-            self._model = load_model(model_path, compile=False)
+            self._model = load_model(
+                model_path,
+                compile=False,
+                custom_objects={"DepthwiseConv2D": _CompatDepthwiseConv2D},
+            )
         except IOError as e:
             print("LoadingModelError: Error while loading Teachable Machine model")
             raise IOError("Error loading model") from e
