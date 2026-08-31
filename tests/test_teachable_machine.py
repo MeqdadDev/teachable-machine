@@ -8,6 +8,7 @@ import numpy as np
 
 @pytest.fixture
 def teachable_machine(mocker):
+    """Return a TeachableMachine instance with load_model/open mocked out."""
     # Create a TeachableMachine instance
     mocker.patch("src.teachable_machine.load_model", return_value="mock_model")
 
@@ -101,6 +102,7 @@ def test_open_image(mocker):
 
 
 def test_preprocess_image_output_shape(teachable_machine):
+    """_preprocess_image should resize any input image to the model's fixed input shape."""
     # Create a sample image
     sample_image = Image.new("RGB", (300, 200))
 
@@ -112,6 +114,7 @@ def test_preprocess_image_output_shape(teachable_machine):
 
 
 def test_preprocess_image_normalization(teachable_machine):
+    """_preprocess_image should scale pixel values into the [-1, 1] range."""
     # Create a sample image with known values
     sample_array = np.full((300, 200, 3), 127, dtype=np.uint8)
     sample_image = Image.fromarray(sample_array)
@@ -125,6 +128,7 @@ def test_preprocess_image_normalization(teachable_machine):
 
 
 def test_preprocess_image_different_sizes(teachable_machine):
+    """_preprocess_image should normalize inputs of any size to the same output shape."""
     # Test with different image sizes
     sizes = [(100, 100), (500, 300), (224, 224)]
 
@@ -135,6 +139,7 @@ def test_preprocess_image_different_sizes(teachable_machine):
 
 
 def test_preprocess_image_content(teachable_machine):
+    """_preprocess_image should preserve the relative spatial layout of image content."""
     # Create a sample image with a specific pattern
     sample_array = np.zeros((300, 200, 3), dtype=np.uint8)
     sample_array[:100, :100] = 255  # White square in top-left corner
