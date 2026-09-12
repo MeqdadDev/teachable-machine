@@ -29,7 +29,7 @@ class _CompatDepthwiseConv2D(DepthwiseConv2D):
         super().__init__(*args, **kwargs)
 
 
-class TeachableMachine(object):
+class TeachableMachine:
     """
     Create a TeachableMachine object to run pre-trained AI models.
     """
@@ -182,6 +182,9 @@ class TeachableMachine(object):
             leaf_paths = {}
 
             def walk(group):
+                """Recurse into `group`, indexing every leaf layer's saved
+                weight paths (from its 'weight_names' attribute) by leaf
+                layer name."""
                 weight_names = group.attrs.get("weight_names")
                 if weight_names is not None:
                     for weight_name in weight_names:
