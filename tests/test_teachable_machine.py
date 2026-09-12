@@ -1,8 +1,9 @@
 import json
+from unittest import mock
 
 import pytest
 from src.teachable_machine import TeachableMachine, _CompatDepthwiseConv2D
-from PIL import Image
+from PIL import Image, ImageFont
 import numpy as np
 
 
@@ -218,3 +219,174 @@ def test_load_model_with_legacy_groups_config(tmp_path):
 
     assert result["class_name"] in {"0 Class A", "1 Class B"}
     assert result["predictions"].shape == (2,)
+
+
+def test_flatten_sequential_layers():
+    """
+    _flatten_sequential_layers must inline nested Sequential layer lists
+    (keeping only the first InputLayer seen overall) while leaving
+    Functional submodels and ordinary layers intact -- this is the core
+    of the nested-Sequential .h5 fix (see _load_nested_sequential_h5):
+    some Teachable Machine exports save the model as a Sequential
+    wrapping nested Sequential/Functional submodels (mirroring a
+    MobileNet-based feature extractor + classification head), which
+    Keras 3's legacy H5 loader mis-rebuilds.
+    """
+    nested_config = {
+        "class_name": "Sequential",
+        "config": {
+            "layers": [
+                {
+                    "class_name": "InputLayer",
+                    "config": {"batch_input_shape": [None, 224, 224, 3]},
+                },
+                {
+                    "class_name": "Sequential",
+                    "config": {
+                        "layers": [
+                            {
+                                "class_name": "InputLayer",
+                                "config": {"batch_input_shape": [None, 224, 224, 3]},
+                            },
+                            {"class_name": "Functional", "config": {"name": "backbone"}},
+                            {
+                                "class_name": "GlobalAveragePooling2D",
+                                "config": {"name": "pool"},
+                            },
+                        ]
+                    },
+                },
+                {
+                    "class_name": "Sequential",
+                    "config": {
+                        "layers": [
+                            {
+                                "class_name": "InputLayer",
+                                "config": {"batch_input_shape": [None, 1280]},
+                            },
+                            {"class_name": "Dense", "config": {"name": "dense"}},
+                            {"class_name": "Dense", "config": {"name": "dense_1"}},
+                        ]
+                    },
+                },
+            ]
+        },
+    }
+
+    flat = TeachableMachine._flatten_sequential_layers(nested_config)
+
+    assert [layer["class_name"] for layer in flat] == [
+        "InputLayer",
+        "Functional",
+        "GlobalAveragePooling2D",
+        "Dense",
+        "Dense",
+    ]
+    # Only the very first InputLayer survives; the nested submodels' own
+    # InputLayers (which just restate the same input shape) are dropped.
+    assert sum(1 for layer in flat if layer["class_name"] == "InputLayer") == 1
+
+
+def test_restore_weights_by_leaf_name(tmp_path):
+    """
+    _restore_weights_by_leaf_name must match each leaf layer's name
+    against the H5 file's saved weight paths -- indexed via each group's
+    'weight_names' attribute -- regardless of what group they're nested
+    under. This is what lets _load_nested_sequential_h5 restore weights
+    after discarding the original nested-Sequential grouping.
+    """
+    h5py = pytest.importorskip("h5py")
+    from tensorflow.keras import layers
+
+    dense_a_weights = [
+        np.ones((2, 3), dtype="float32"),
+        np.full((3,), 2.0, dtype="float32"),
+    ]
+    dense_b_weights = [
+        np.full((3, 1), 5.0, dtype="float32"),
+        np.array([7.0], dtype="float32"),
+    ]
+
+    # Hand-built H5 layout: dense_a is nested two levels deep, as if
+    # under a wrapper Sequential that _load_nested_sequential_h5 would
+    # have discarded; dense_b sits at the top level. The lookup is by
+    # leaf layer name alone, so nesting depth shouldn't matter.
+    h5_path = tmp_path / "weights.h5"
+    with h5py.File(h5_path, "w") as f:
+        root = f.create_group("model_weights")
+        wrapper = root.create_group("outer_wrapper")
+        group_a = wrapper.create_group("dense_a")
+        group_a.attrs["weight_names"] = [b"dense_a/kernel:0", b"dense_a/bias:0"]
+        group_a.create_dataset("dense_a/kernel:0", data=dense_a_weights[0])
+        group_a.create_dataset("dense_a/bias:0", data=dense_a_weights[1])
+
+        group_b = root.create_group("dense_b")
+        group_b.attrs["weight_names"] = [b"dense_b/kernel:0", b"dense_b/bias:0"]
+        group_b.create_dataset("dense_b/kernel:0", data=dense_b_weights[0])
+        group_b.create_dataset("dense_b/bias:0", data=dense_b_weights[1])
+
+    # Freshly-built layers standing in for a rebuild via the Functional API.
+    rebuilt_a = layers.Dense(3, name="dense_a")
+    rebuilt_a.build((None, 2))
+    rebuilt_b = layers.Dense(1, name="dense_b")
+    rebuilt_b.build((None, 3))
+
+    tm = object.__new__(TeachableMachine)
+    tm._restore_weights_by_leaf_name(str(h5_path), [rebuilt_a, rebuilt_b])
+
+    np.testing.assert_array_equal(rebuilt_a.get_weights()[0], dense_a_weights[0])
+    np.testing.assert_array_equal(rebuilt_a.get_weights()[1], dense_a_weights[1])
+    np.testing.assert_array_equal(rebuilt_b.get_weights()[0], dense_b_weights[0])
+    np.testing.assert_array_equal(rebuilt_b.get_weights()[1], dense_b_weights[1])
+
+
+def test_restore_weights_by_leaf_name_raises_on_missing_layer(tmp_path):
+    """A leaf layer with no matching saved weights must raise, not fail silently."""
+    h5py = pytest.importorskip("h5py")
+    from tensorflow.keras import layers
+
+    h5_path = tmp_path / "weights.h5"
+    with h5py.File(h5_path, "w") as f:
+        f.create_group("model_weights")
+
+    layer = layers.Dense(3, name="dense_a")
+    layer.build((None, 2))
+
+    tm = object.__new__(TeachableMachine)
+    with pytest.raises(ValueError, match="dense_a"):
+        tm._restore_weights_by_leaf_name(str(h5_path), [layer])
+
+
+def test_show_prediction_on_image_font_fallback(tmp_path):
+    """
+    show_prediction_on_image() must fall back to ImageFont.load_default()
+    when ImageFont.truetype can't resolve the named font by bare name
+    (e.g. on Windows, where DejaVuSans-Bold.ttf isn't bundled and raises
+    OSError), instead of crashing -- and, by running for real against
+    whatever Pillow is installed, also exercises textbbox()-based sizing
+    in place of ImageDraw.textsize(), removed in Pillow 10+.
+    """
+    image_path = tmp_path / "sample.jpg"
+    Image.new("RGB", (224, 224), color=(50, 50, 50)).save(image_path)
+
+    real_truetype = ImageFont.truetype
+
+    def fake_truetype(font, *args, **kwargs):
+        # Only the bare-name lookup fails, matching real Windows behavior;
+        # Pillow's own load_default(size=...) fallback internally calls
+        # truetype() again on its embedded font bytes, which must still
+        # succeed, or this test would trip on that instead of the fix.
+        if font == "DejaVuSans-Bold.ttf":
+            raise OSError("cannot open resource")
+        return real_truetype(font, *args, **kwargs)
+
+    tm = object.__new__(TeachableMachine)
+    result = {"class_name": "Class A", "class_confidence": 0.987}
+
+    with mock.patch.object(ImageFont, "truetype", side_effect=fake_truetype):
+        annotated = tm.show_prediction_on_image(
+            str(image_path), result, convert_to_bgr=False
+        )
+
+    assert isinstance(annotated, Image.Image)
+    assert annotated.size == (224, 224)
