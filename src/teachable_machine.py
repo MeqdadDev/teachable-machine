@@ -187,9 +187,16 @@ class TeachableMachine(object):
         draw = ImageDraw.Draw(image)
 
         font_size = int(image.height * 0.04)  # 4% of the image height
-        font = ImageFont.truetype("DejaVuSans-Bold.ttf", font_size)
+        try:
+            # Not bundled with Pillow on every platform (notably Windows),
+            # where a bare name can't be resolved and raises OSError.
+            font = ImageFont.truetype("DejaVuSans-Bold.ttf", font_size)
+        except OSError:
+            font = ImageFont.load_default(size=font_size)
 
-        text_width, text_height = draw.textsize(text, font=font)
+        # ImageDraw.textsize was removed in Pillow 10; use textbbox instead.
+        left, top, right, bottom = draw.textbbox((0, 0), text, font=font)
+        text_width, text_height = right - left, bottom - top
         position = (10, image.height - text_height - 10)
 
         draw.rectangle(
