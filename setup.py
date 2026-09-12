@@ -1,11 +1,28 @@
+import re
+from pathlib import Path
+
 from setuptools import setup
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
+
+def _read_version():
+    """
+    Read `__version__` from src/__init__.py so the package version has a
+    single source of truth instead of being duplicated (and drifting out
+    of sync, as it previously did) between here and there.
+    """
+    init_contents = (Path(__file__).parent / "src" / "__init__.py").read_text()
+    match = re.search(r'^__version__\s*=\s*["\']([^"\']+)["\']', init_contents, re.M)
+    if not match:
+        raise RuntimeError("Unable to find __version__ in src/__init__.py")
+    return match.group(1)
+
+
 setup(
     name="teachable_machine",
-    version="1.3.0",
+    version=_read_version(),
     description="A Python package designed to simplify the integration of exported models from Google's Teachable Machine platform into various environments. \
     This tool was specifically crafted to work seamlessly with Teachable Machine, making it easier to implement and use your trained models.",
     py_modules=["teachable_machine"],
