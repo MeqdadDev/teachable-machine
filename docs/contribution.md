@@ -6,6 +6,11 @@ Pull requests are welcome. For major changes, please open an issue first to disc
 For new features, please make sure you've tested your code in real environment. 
 And to avoid duplications, please take a sneak peek on the project structure and practices before making your PR.
 
+If your PR includes a user-facing fix or feature, add an entry to
+[`CHANGELOG.md`](https://github.com/MeqdadDev/teachable-machine/blob/main/CHANGELOG.md)
+as part of it — see [Releasing](releasing.md) for the versioning and
+changelog conventions this project follows.
+
 For more details and questions, contact me via links below.
 
 ### 🔗 Contact me

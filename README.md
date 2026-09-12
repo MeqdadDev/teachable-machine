@@ -31,7 +31,9 @@ Teachable Machine's exported `.h5` models embed a legacy `DepthwiseConv2D` layer
 TypeError: Unrecognized keyword arguments passed to DepthwiseConv2D: {'groups': 1}
 ```
 
-Since `v1.3.0`, this package patches the model loader so exported models load correctly on up-to-date TensorFlow/Keras installs, with no need to pin an old TensorFlow version. See [issue #2](https://github.com/MeqdadDev/teachable-machine/issues/2) for background.
+Some exports also save the model as a `Sequential` wrapping nested `Sequential`/`Functional` submodels, a shape Keras 3's legacy H5 loader mis-rebuilds, which previously surfaced as a misleading `FileNotFoundError: Model file not found`.
+
+Since `v1.3.0`, this package patches the model loader to handle both cases, so exported models load correctly on up-to-date TensorFlow/Keras installs, with no need to pin an old TensorFlow version. It also fixes prediction-annotation crashes on Windows / recent Pillow versions (`show_prediction_on_image`). See [issue #2](https://github.com/MeqdadDev/teachable-machine/issues/2) and the [changelog](https://meqdaddev.github.io/teachable-machine/changelog/) for background.
 
 ## Requirements
 
