@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented in this file.
 
+## [1.3.2] - 2026-09-12
+
+### Fixed
+
+- **Logo missing on the PyPI project page**: `README.md` referenced the logo with a relative path (`logo.png`), which GitHub resolves against the repo but PyPI's rendered long description does not, so it showed as a broken image on [pypi.org/project/teachable-machine](https://pypi.org/project/teachable-machine/). Switched to an absolute URL (`raw.githubusercontent.com`).
+- Corrected a leftover `v1.3.0` reference in the TensorFlow/Keras compatibility note (README and docs site) to `v1.3.1` — the fixes actually first shipped in `v1.3.1`, since the `v1.3.0` release attempt failed to build and nothing was ever published to PyPI under that version (see the `v1.3.1` entry below).
+
 ## [1.3.1] - 2026-09-12
 
 ### Fixed
