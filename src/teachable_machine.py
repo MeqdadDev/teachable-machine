@@ -195,17 +195,22 @@ class TeachableMachine(object):
             font = ImageFont.load_default(size=font_size)
 
         # ImageDraw.textsize was removed in Pillow 10; use textbbox instead.
-        left, top, right, bottom = draw.textbbox((0, 0), text, font=font)
-        text_width, text_height = right - left, bottom - top
+        # A first measurement at the origin gives the text's extent, used only
+        # to decide where to place it.
+        _, top, _, bottom = draw.textbbox((0, 0), text, font=font)
+        text_height = bottom - top
         position = (10, image.height - text_height - 10)
 
+        # textbbox's (left, top, right, bottom) are offsets from the point
+        # passed in, and that offset (particularly `top`, from font ascent)
+        # is usually not zero -- reusing the origin-measured box as if it
+        # started exactly at `position` shifts it up and clips the text's
+        # descenders. Re-measure at the actual draw position instead, and
+        # pad it a little so the box comfortably covers the glyphs.
+        padding = 4
+        box = draw.textbbox(position, text, font=font)
         draw.rectangle(
-            [
-                position[0],
-                position[1],
-                position[0] + text_width,
-                position[1] + text_height,
-            ],
+            [box[0] - padding, box[1] - padding, box[2] + padding, box[3] + padding],
             fill=(0, 0, 0, 128),
         )
 
