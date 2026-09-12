@@ -1,6 +1,30 @@
 from tensorflow.keras.models import load_model
+from tensorflow.keras.layers import DepthwiseConv2D
 from PIL import Image, ImageOps, ImageDraw, ImageFont
 import numpy as np
+
+
+class _CompatDepthwiseConv2D(DepthwiseConv2D):
+    """
+    Drop-in replacement for Keras' DepthwiseConv2D that tolerates the
+    stray 'groups' argument found in models exported by Google's
+    Teachable Machine platform.
+
+    Teachable Machine's Keras/.h5 export embeds 'groups': 1 in every
+    saved DepthwiseConv2D layer config. That key was never meaningful
+    for a depthwise convolution, but older Keras ignored it. Keras 3
+    (bundled by default since TensorFlow 2.16) validates layer configs
+    strictly and raises:
+        TypeError/ValueError: Unrecognized keyword arguments passed to
+        DepthwiseConv2D: {'groups': 1}
+    This subclass discards the unused key on construction so exported
+    models keep loading on current TensorFlow/Keras installs, without
+    requiring users to pin an old TensorFlow version.
+    """
+
+    def __init__(self, *args, **kwargs):
+        kwargs.pop("groups", None)
+        super().__init__(*args, **kwargs)
 
 
 class TeachableMachine(object):
@@ -30,7 +54,11 @@ class TeachableMachine(object):
 
     def _load_model(self, model_path: str):
         try:
-            self._model = load_model(model_path, compile=False)
+            self._model = load_model(
+                model_path,
+                compile=False,
+                custom_objects={"DepthwiseConv2D": _CompatDepthwiseConv2D},
+            )
         except IOError as e:
             print("LoadingModelError: Error while loading Teachable Machine model")
             raise IOError("Error loading model") from e
@@ -159,18 +187,30 @@ class TeachableMachine(object):
         draw = ImageDraw.Draw(image)
 
         font_size = int(image.height * 0.04)  # 4% of the image height
-        font = ImageFont.truetype("DejaVuSans-Bold.ttf", font_size)
+        try:
+            # Not bundled with Pillow on every platform (notably Windows),
+            # where a bare name can't be resolved and raises OSError.
+            font = ImageFont.truetype("DejaVuSans-Bold.ttf", font_size)
+        except OSError:
+            font = ImageFont.load_default(size=font_size)
 
-        text_width, text_height = draw.textsize(text, font=font)
+        # ImageDraw.textsize was removed in Pillow 10; use textbbox instead.
+        # A first measurement at the origin gives the text's extent, used only
+        # to decide where to place it.
+        _, top, _, bottom = draw.textbbox((0, 0), text, font=font)
+        text_height = bottom - top
         position = (10, image.height - text_height - 10)
 
+        # textbbox's (left, top, right, bottom) are offsets from the point
+        # passed in, and that offset (particularly `top`, from font ascent)
+        # is usually not zero -- reusing the origin-measured box as if it
+        # started exactly at `position` shifts it up and clips the text's
+        # descenders. Re-measure at the actual draw position instead, and
+        # pad it a little so the box comfortably covers the glyphs.
+        padding = 4
+        box = draw.textbbox(position, text, font=font)
         draw.rectangle(
-            [
-                position[0],
-                position[1],
-                position[0] + text_width,
-                position[1] + text_height,
-            ],
+            [box[0] - padding, box[1] - padding, box[2] + padding, box[3] + padding],
             fill=(0, 0, 0, 128),
         )
 
