@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented in this file.
 
+## [1.3.3]
+
+### Fixed
+
+- **Non-English class names garbled on Windows**: `labels.txt` was read with the system's default text encoding, which on many Windows systems isn't UTF-8, so Arabic and other non-Latin class names came out unreadable. The file is now always read as UTF-8, and a byte order mark added by some editors no longer ends up in the first class name. If you saved `labels.txt` in another encoding, save it again as UTF-8.
+
 ## [1.3.2] - 2026-09-12
 
 ### Fixed

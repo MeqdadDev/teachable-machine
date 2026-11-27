@@ -37,8 +37,10 @@ That's expected: the package keeps the whole line from `labels.txt`. See
 
 ## Garbled class names on Windows
 
-The labels file is read with your system's default text encoding, which on many Windows systems
-isn't UTF-8. Turn on Python's UTF-8 mode before running your program.
+This is fixed in version 1.3.3, which always reads `labels.txt` as UTF-8.
+[Upgrade the package](compatibility.md#check-your-version).
+
+With an earlier version, turn on Python's UTF-8 mode before running your program.
 
 === "PowerShell"
 
@@ -53,6 +55,11 @@ isn't UTF-8. Turn on Python's UTF-8 mode before running your program.
     set PYTHONUTF8=1
     python app.py
     ```
+
+## `Labels file not found`, but the file is there
+
+Since version 1.3.3, the labels file must be UTF-8. The `labels.txt` exported by Teachable Machine
+already is. If you edited it and saved it in another encoding, save it again as UTF-8.
 
 ## `json.dumps` fails on the result
 

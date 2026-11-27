@@ -231,7 +231,8 @@ class TeachableMachine:
 
     def _load_labels(self, labels_file_path):
         try:
-            with open(labels_file_path, "r") as file:
+            # Teachable Machine writes UTF-8; "-sig" also drops a byte order mark.
+            with open(labels_file_path, "r", encoding="utf-8-sig") as file:
                 self._labels = file.readlines()
         except IOError as e:
             print("LoadingLabelsError: Error while loading labels.txt file")

@@ -33,7 +33,8 @@ label = result["class_name"].split(maxsplit=1)[-1]  # "Cat"
 Always use the `labels.txt` that came in the same download as the model, with its lines in their
 original order.
 
-!!! warning "Class names that aren't in English, on Windows"
+!!! note "Class names in any language"
 
-    Names in Arabic and other non-Latin scripts can come out garbled on Windows. See
-    [Troubleshooting](../guides/troubleshooting.md#garbled-class-names-on-windows) for the fix.
+    The package reads `labels.txt` as UTF-8, so class names can be in Arabic or any other language.
+    If you edit the file, save it as UTF-8. Versions before 1.3.3 can
+    [garble these names on Windows](../guides/troubleshooting.md#garbled-class-names-on-windows).
