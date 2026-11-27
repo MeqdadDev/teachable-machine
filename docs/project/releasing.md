@@ -1,3 +1,5 @@
+# Releasing
+
 ## Versioning
 
 This project follows [Semantic Versioning](https://semver.org/) (`MAJOR.MINOR.PATCH`):
@@ -32,8 +34,8 @@ truth is what this rule exists to prevent.)
 
 Every user-facing change (fix, feature, or breaking change) is recorded in
 [`CHANGELOG.md`](https://github.com/MeqdadDev/teachable-machine/blob/main/CHANGELOG.md)
-at the repo root, mirrored verbatim to `docs/changelog.md` (the two files
-must stay identical — that's what the docs site's Changelog page renders).
+at the repo root. The docs site's Changelog page includes that file, so edit it
+only there.
 
 - Add the entry **in the same PR** as the change, under the version header
   for the *next* release (create that header, e.g. `## [1.4.0]`, if the PR
@@ -47,7 +49,7 @@ must stay identical — that's what the docs site's Changelog page renders).
 ## Release process
 
 1. **Confirm the changelog is accurate.** The unreleased version's section
-   at the top of `CHANGELOG.md` (and `docs/changelog.md`) should already
+   at the top of `CHANGELOG.md` should already
    describe everything merged since the last release, since each PR added
    its own entry — read through it and fix anything missing before
    continuing.
@@ -79,6 +81,7 @@ must stay identical — that's what the docs site's Changelog page renders).
    - `pip install --upgrade teachable-machine` picks it up.
    - The [docs site](https://meqdaddev.github.io/teachable-machine/) — which
      [redeploys automatically](https://github.com/MeqdadDev/teachable-machine/blob/main/.github/workflows/docs.yml)
-     on every push to `main` that touches `docs/`, `src/`, or `mkdocs.yml` —
+     on every push to `main` that touches `docs/`, `examples/`, `src/`, `mkdocs.yml`,
+     `requirements-docs.txt` or `CHANGELOG.md` —
      reflects the release (Changelog page, and any docstring changes via
-     `mkdocstrings` on the Explanation page).
+     `mkdocstrings` on the API page).

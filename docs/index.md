@@ -1,52 +1,84 @@
-# Welcome to Teachable Machine Package
-_By: [Meqdad Darwish](https://github.com/MeqdadDev)_
+---
+title: Home
+hide:
+  - navigation
+  - toc
+---
 
-<p align="center">
-<picture>
-  <img alt="Teachable Machine Package Logo" src="logo.png" width="80%" height="80%" >
-</picture>
-</p>
+# Teachable Machine { .tm-title }
 
-[![Downloads](https://static.pepy.tech/badge/teachable-machine)](https://pepy.tech/project/teachable-machine)
-[![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://choosealicense.com/licenses/mit/)
-[![PyPI](https://img.shields.io/pypi/v/teachable-machine)](https://pypi.org/project/teachable-machine/)
+<div class="tm-hero" markdown>
 
-## Description
-A Python package designed to simplify the integration of exported models from Google's [Teachable Machine](https://teachablemachine.withgoogle.com/) platform into various environments.
-This tool was specifically crafted to work seamlessly with Teachable Machine, making it easier to implement and use your trained models.
+![Teachable Machine logo](assets/logo.png)
 
-Source Code is published on [GitHub](https://github.com/MeqdadDev/teachable-machine)
+**Run image models trained with Google's Teachable Machine in a few lines of Python.**
+Load the exported Keras model and its labels, then classify images.
 
-## Table Of Contents
+[Get started](getting-started/quickstart.md){ .md-button .md-button--primary }
+[Browse examples](examples/index.md){ .md-button }
 
-1. [How-To Guide](how-to-guide.md)
-2. [Requirements](requirements.md)
-3. [Code Examples](codeExamples.md)
-4. [Explanation](explanation.md)
-5. [Changelog](changelog.md)
-6. [Contributing](contribution.md)
-7. [Releasing](releasing.md)
+</div>
 
-## Supported Classifiers
-
-**Image Classification**
-
-## Compatibility with recent TensorFlow/Keras releases
-
-Teachable Machine's exported `.h5` models embed a legacy `DepthwiseConv2D` layer config that current Keras (Keras 3, bundled by default since TensorFlow 2.16) rejects with an error such as:
-
-```
-TypeError: Unrecognized keyword arguments passed to DepthwiseConv2D: {'groups': 1}
+```bash
+pip install teachable-machine
 ```
 
-Some exports also save the model as a `Sequential` wrapping nested `Sequential`/`Functional` submodels, a shape Keras 3's legacy H5 loader mis-rebuilds, which previously surfaced as a misleading `FileNotFoundError: Model file not found`.
+```python
+from teachable_machine import TeachableMachine
 
-Since `v1.3.1`, this package patches the model loader to handle both cases, so exported models load correctly on up-to-date TensorFlow/Keras installs, with no need to pin an old TensorFlow version. It also fixes prediction-annotation crashes on Windows / recent Pillow versions (`show_prediction_on_image`). See [issue #2](https://github.com/MeqdadDev/teachable-machine/issues/2) and the [changelog](changelog.md) for background.
+model = TeachableMachine(model_path="keras_model.h5", labels_file_path="labels.txt")
+result = model.classify_image("photo.jpg")
 
-## Links
+print(result["class_name"], result["class_confidence"])
+```
 
-- [PyPI](https://pypi.org/project/teachable-machine/)
+## From idea to code
 
-- [Source Code](https://github.com/MeqdadDev/teachable-machine)
+<div class="grid cards" markdown>
 
-- [Teachable Machine Platform](https://teachablemachine.withgoogle.com/)
+-   :material-school:{ .lg } **[1. Train](getting-started/export-model.md)**
+
+    ---
+
+    Train an image model in [Teachable Machine](https://teachablemachine.withgoogle.com/), with no coding.
+
+-   :material-download:{ .lg } **[2. Export](getting-started/export-model.md)**
+
+    ---
+
+    Download it as a Keras model, `keras_model.h5`, with its `labels.txt`.
+
+-   :material-play-circle:{ .lg } **[3. Run](getting-started/quickstart.md)**
+
+    ---
+
+    Give it an image and get back the class and its confidence.
+
+</div>
+
+## Why Teachable Machine
+
+<div class="grid cards" markdown>
+
+-   :material-lightning-bolt:{ .lg } **Short code**
+
+    One line loads the model, and one call classifies an image.
+
+-   :material-check-decagram:{ .lg } **[Works with current TensorFlow](guides/compatibility.md)**
+
+    Exported models load on Keras 3, with no need to pin an old TensorFlow version.
+
+-   :material-image-outline:{ .lg } **[Draws the result](guides/images-and-frames.md)**
+
+    Get the image back with the class and confidence written on it, ready for OpenCV.
+
+-   :material-book-open-variant:{ .lg } **[Documented results](reference/results.md)**
+
+    Every value in the result is described, with its type.
+
+</div>
+
+!!! tip "Running on a Raspberry Pi or another small device?"
+
+    Try [Teachable Machine Lite](https://meqdaddev.github.io/teachable-machine-lite/). It runs the
+    TensorFlow Lite export and doesn't need the full TensorFlow.

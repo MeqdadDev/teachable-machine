@@ -390,3 +390,30 @@ def test_show_prediction_on_image_font_fallback(tmp_path):
 
     assert isinstance(annotated, Image.Image)
     assert annotated.size == (224, 224)
+
+
+@pytest.mark.parametrize("file_encoding", ["utf-8", "utf-8-sig"])
+def test_load_labels_reads_utf8_whatever_the_system_encoding_is(tmp_path, file_encoding):
+    """
+    Teachable Machine's labels.txt is UTF-8. It must be read as such even where
+    the system's default text encoding isn't (e.g. cp1252 on many Windows
+    systems), which garbled non-English class names. A byte order mark, as
+    added by some editors, must not end up in the first label.
+    """
+    labels_path = tmp_path / "labels.txt"
+    labels_path.write_text("0 أحمر\n1 أزرق\n", encoding=file_encoding)
+
+    real_open = open
+
+    def windows_open(file, mode="r", *args, **kwargs):
+        # Simulate Windows' default encoding, so this test also catches the
+        # bug on systems that default to UTF-8, such as the Linux CI runners.
+        if "b" not in mode and not args and kwargs.get("encoding") is None:
+            kwargs["encoding"] = "cp1252"
+        return real_open(file, mode, *args, **kwargs)
+
+    tm = object.__new__(TeachableMachine)
+    with mock.patch("builtins.open", windows_open):
+        tm._load_labels(str(labels_path))
+
+    assert tm._labels == ["0 أحمر\n", "1 أزرق\n"]

@@ -30,9 +30,7 @@ class _CompatDepthwiseConv2D(DepthwiseConv2D):
 
 
 class TeachableMachine:
-    """
-    Create a TeachableMachine object to run pre-trained AI models.
-    """
+    """Classify images with a Keras model exported from Google's Teachable Machine."""
 
     SUPPORTED_TYPES = {"keras", "h5"}
     IMAGE_SIZE = (224, 224)
@@ -43,6 +41,20 @@ class TeachableMachine:
         labels_file_path="labels.txt",
         model_type="h5",
     ) -> None:
+        """
+        Load an exported Teachable Machine Keras model and its labels.
+
+        Args:
+            model_path (str): Path to the exported model file. Default is 'keras_model.h5'.
+            labels_file_path (str): Path to the `labels.txt` file exported with the model.
+                Default is 'labels.txt'.
+            model_type (str): `"h5"` or `"keras"`, in any letter case. Default is 'h5'.
+
+        Raises:
+            ValueError: If `model_type` is not supported.
+            OSError: If the model or labels file cannot be loaded. Some model errors raise its
+                subclass FileNotFoundError, so catch OSError to handle both.
+        """
         self._model_type = model_type.lower()
         if self._model_type not in self.SUPPORTED_TYPES:
             raise ValueError(
@@ -219,7 +231,8 @@ class TeachableMachine:
 
     def _load_labels(self, labels_file_path):
         try:
-            with open(labels_file_path, "r") as file:
+            # Teachable Machine writes UTF-8; "-sig" also drops a byte order mark.
+            with open(labels_file_path, "r", encoding="utf-8-sig") as file:
                 self._labels = file.readlines()
         except IOError as e:
             print("LoadingLabelsError: Error while loading labels.txt file")
@@ -251,11 +264,17 @@ class TeachableMachine:
         """
         Classify an image using the pre-trained model.
 
-        Parameters:
-        image_path (str): Path of the image to be classified.
+        Args:
+            image_path (str): Path of the image to be classified.
 
         Returns:
-        dict: Classification results including class name, index, confidence and predictions.
+            dict: The classification results. `"class_name"` is the matching line of
+                `labels.txt`, `"class_index"` is its position, `"class_confidence"` is a
+                value from 0 to 1, and `"predictions"` holds one value per class.
+
+        Raises:
+            FileNotFoundError: If the image file is not found.
+            TypeError: If the file cannot be opened as an image.
         """
         image = self._open_image(image_path)
         return self._get_image_classification(image)
@@ -289,17 +308,15 @@ class TeachableMachine:
         """
         Classify an image and show the prediction results on the image.
 
-        Parameters:
-        image_path (str): Path of the input image to be classified.
-        convert_to_bgr (bool, optional): Whether to convert the image to BGR format for OpenCV.
-            If False, the image will be returned in RGB format. Default is True.
+        Args:
+            image_path (str): Path of the input image to be classified.
+            convert_to_bgr (bool, optional): Whether to convert the image to BGR format for OpenCV.
+                If False, the image is returned in RGB format. Default is True.
 
         Returns:
-        tuple: (classification_result, image_with_prediction)
-            classification_result (dict): Classification results including class name, index, confidence and predictions.
-            image_with_prediction (np.ndarray or PIL.Image.Image): The image with prediction results drawn on it.
-                Returns a NumPy array in BGR format if convert_to_bgr is True.
-                Otherwise, returns a PIL.Image.Image in RGB format.
+            tuple: `(classification_result, image_with_prediction)`, where `classification_result`
+                is the dict returned by `classify_image` and `image_with_prediction` is the image
+                with the results drawn on it (see `show_prediction_on_image`).
         """
         classification_result = self.classify_image(image_path)
         image_with_prediction = self.show_prediction_on_image(
@@ -313,17 +330,17 @@ class TeachableMachine:
         """
         Show the prediction results on the image and return the modified image.
 
-        Parameters:
-        image_path (str): Path of the input image to be classified.
-        classification_result (dict, optional): Pre-computed classification result.
-            If not provided, the method will classify the image.
-        convert_to_bgr (bool, optional): Whether to convert the image to BGR format for OpenCV.
-            If False, the image will be returned in RGB format. Default is True.
+        Args:
+            image_path (str): Path of the input image.
+            classification_result (dict, optional): Pre-computed classification result.
+                If not provided, the method classifies the image.
+            convert_to_bgr (bool, optional): Whether to convert the image to BGR format for OpenCV.
+                If False, the image is returned in RGB format. Default is True.
 
         Returns:
-        np.ndarray or PIL.Image.Image: The image with prediction results drawn on it.
-            Returns a NumPy array in BGR format if convert_to_bgr is True.
-            Otherwise, returns a PIL.Image.Image in RGB format.
+            np.ndarray or PIL.Image.Image: The image with the prediction results drawn on it: a
+                NumPy array in BGR format if `convert_to_bgr` is True, otherwise a PIL image in
+                RGB format.
         """
         image = self._open_image(image_path)
 
