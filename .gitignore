@@ -188,3 +188,6 @@ src/screenshot.jpg
 /screenshot.jpg
 /.idea/teachable-machine.iml
 /.idea/vcs.xml
+
+# Documentation site build output
+/site/

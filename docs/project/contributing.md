@@ -1,4 +1,4 @@
-## Contributing
+# Contributing
 
 ### Instructions
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
@@ -10,6 +10,23 @@ If your PR includes a user-facing fix or feature, add an entry to
 [`CHANGELOG.md`](https://github.com/MeqdadDev/teachable-machine/blob/main/CHANGELOG.md)
 as part of it — see [Releasing](releasing.md) for the versioning and
 changelog conventions this project follows.
+
+### Running the tests
+
+```bash
+pip install -r requirements.txt
+pytest
+```
+
+### Working on the documentation
+
+The site's pages are in `docs/`, and the programs on the example pages are the files in
+`examples/`. Preview your changes from the repository root:
+
+```bash
+pip install -r requirements-docs.txt
+mkdocs serve
+```
 
 For more details and questions, contact me via links below.
 
