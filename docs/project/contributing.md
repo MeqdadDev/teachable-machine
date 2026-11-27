@@ -31,8 +31,9 @@ mkdocs serve
 For more details and questions, contact me via links below.
 
 ### 🔗 Contact me
-[![Email Badge](https://img.shields.io/badge/Gmail-Contact_Me?style=for-the-badge&logo=gmail&logoColor=white)](mailto:meqdad.darweesh@gmail.com)
 
-[![linkedin](https://img.shields.io/badge/linkedin-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/meqdad-darwish/)
-
-[![twitter](https://img.shields.io/badge/twitter-1DA1F2?style=for-the-badge&logo=twitter&logoColor=white)](https://twitter.com/MeqdadDev)
+- :material-email-outline: Email: meqdad.darweesh [at] gmail [dot] com
+- :fontawesome-brands-linkedin: [LinkedIn](https://www.linkedin.com/in/meqdad-darwish/)
+- :fontawesome-brands-x-twitter: [X (Twitter)](https://twitter.com/MeqdadDev)
+- :fontawesome-brands-instagram: [Instagram](https://www.instagram.com/meqdad.dev/)
+- :fontawesome-solid-globe: [Website](https://meqdaddev.github.io/)
